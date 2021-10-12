@@ -39,15 +39,15 @@ import comunes.DatosBlackJack;
  */
 public class ClienteBlackJack extends JFrame implements Runnable{
 	//Constantes de Interfaz Grafica
-	public static final int WIDTH=670;
-	public static final int HEIGHT=360;
+	public static final int WIDTH=770;
+	public static final int HEIGHT=560;
 	
 	//Constantes de conexión con el Servidor BlackJack
 	public static final int PUERTO=7377;
 	public static final String IP="127.0.0.1";
 	
 	//variables de control del juego
-	private String idYo, otroJugador;
+	private String idYo, otroJugador, otroJugador2;
 	private boolean turno;
 	private DatosBlackJack datosRecibidos;
 	
@@ -164,9 +164,15 @@ public class ClienteBlackJack extends JFrame implements Runnable{
 				datosRecibidos = (DatosBlackJack) in.readObject();
 				if(datosRecibidos.getIdJugadores()[0].equals(idYo)) {
 					otroJugador=datosRecibidos.getIdJugadores()[1];
+					otroJugador2=datosRecibidos.getIdJugadores()[2];
 					turno=true;
-				}else {
+				}else if(datosRecibidos.getIdJugadores()[1].equals(idYo)){
+					otroJugador=datosRecibidos.getIdJugadores()[2];
+					otroJugador2=datosRecibidos.getIdJugadores()[0];
+				}
+				else {
 					otroJugador=datosRecibidos.getIdJugadores()[0];
+					otroJugador2=datosRecibidos.getIdJugadores()[1];
 				}
 				this.habilitarSalaJuego(datosRecibidos);
 			} catch (ClassNotFoundException | IOException e) {
@@ -206,7 +212,7 @@ public class ClienteBlackJack extends JFrame implements Runnable{
 				// TODO Auto-generated method stub
 				ventanaEspera = (VentanaEspera)containerInternalFrames.getComponent(0);
 				ventanaEspera.cerrarSalaEspera();
-				ventanaSalaJuego = new VentanaSalaJuego(idYo,otroJugador);
+				ventanaSalaJuego = new VentanaSalaJuego(idYo,otroJugador,otroJugador2);
 				ventanaSalaJuego.pintarCartasInicio(datosRecibidos);
 				adicionarInternalFrame(ventanaSalaJuego);
                 if(turno) {
