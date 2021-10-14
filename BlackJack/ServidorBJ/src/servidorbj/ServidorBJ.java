@@ -90,6 +90,7 @@ public class ServidorBJ implements Runnable{
 		mazo = new Baraja();
 		Carta carta;
 		
+		manosJugadores = new ArrayList<ArrayList<Carta>>(LONGITUD_COLA + 1);
 		manoJugador1 = new ArrayList<Carta>();
 		manoJugador2 = new ArrayList<Carta>();
 		manoJugador3 = new ArrayList<Carta>();
@@ -113,7 +114,6 @@ public class ServidorBJ implements Runnable{
 		calcularValorMano(carta,3);
 		
 		//gestiona las tres manos en un solo objeto para facilitar el manejo del hilo
-		manosJugadores = new ArrayList<ArrayList<Carta>>(LONGITUD_COLA + 1);
 		manosJugadores.add(manoJugador1);
 		manosJugadores.add(manoJugador2);
 		manosJugadores.add(manoJugador3);
@@ -122,8 +122,22 @@ public class ServidorBJ implements Runnable{
 
 	private void calcularValorMano(Carta carta, int i) {
 		// TODO Auto-generated method stub
-    	
+		System.out.println(manosJugadores.size());
+		boolean flagAs = false;
+		
+		if(manosJugadores.size() > 0) {
+		for(int j=0; j < manosJugadores.get(i).size(); j++) {
+			
+			if(manosJugadores.get(i).get(j).toString() == "As") {
+				flagAs = true;
+				mostrarMensaje("Encontré un As");
+				}				
+			}
+		}
+		
+		
 			if(carta.getValor().equals("As")) {
+				
 				if(valorManos[i] + 11 > 21) {
 					valorManos[i]+= 1;
 				}
@@ -134,9 +148,21 @@ public class ServidorBJ implements Runnable{
 			}else {
 				if(carta.getValor().equals("J") || carta.getValor().equals("Q")
 						   || carta.getValor().equals("K")) {
-					valorManos[i]+=10;
+
+					if(flagAs == true && valorManos[i] > 21) {
+						valorManos[i] = valorManos[i] ;
+					}
+					else {
+						valorManos[i]+=10;
+					}
 				}else {
-					valorManos[i]+=Integer.parseInt(carta.getValor()); 
+					if(flagAs == true && valorManos[i] > 21) {
+						valorManos[i] -= 10;
+						valorManos[i]+=Integer.parseInt(carta.getValor());
+					}
+					else {
+						valorManos[i]+=Integer.parseInt(carta.getValor());
+					}
 				}
 		}
 	}
@@ -194,6 +220,10 @@ private void terminarJuego() {
 				
 			} 
 		}
+
+	private void determinarGananciasApuestas() {
+		
+	}
   	   
 	private void iniciarRondaJuego() {
 		
