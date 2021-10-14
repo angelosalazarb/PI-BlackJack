@@ -43,6 +43,35 @@ public class Baraja {
 		   }
 	   }
    }
+   
+   
+   public Baraja(int numOfDecks) {
+	   aleatorio = new Random();
+	   mazo = new ArrayList<Carta>();
+	   String valor;
+	   
+	   for(int k=0; k<numOfDecks; k++) {
+	   
+		   for(int i=1;i<=4;i++) {
+			   for(int j=2;j<=14;j++) {
+				   switch(j) {
+				   case 11: valor="J";break;
+				   case 12: valor="Q";break;
+				   case 13: valor="K";break;
+				   case 14: valor="As";break;
+				   default: valor= String.valueOf(j);break;
+				   } 
+				   switch(i) {
+				   case 1: mazo.add(new Carta(valor,"C"));break;
+				   case 2: mazo.add(new Carta(valor,"D"));break;
+				   case 3: mazo.add(new Carta(valor,"P"));break;
+				   case 4: mazo.add(new Carta(valor,"T"));break;
+				   }
+			   }
+		   }
+	   }
+	   
+   }
      
    public Carta getCarta() {
 	   int index = aleatorio.nextInt(mazoSize());

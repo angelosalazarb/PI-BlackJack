@@ -3,11 +3,16 @@ package clientebj;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.GridLayout;
 import java.awt.HeadlessException;
+import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
 import javax.swing.BorderFactory;
+import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JInternalFrame;
@@ -15,6 +20,7 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
+import javax.swing.JTextField;
 import javax.swing.SwingUtilities;
 import javax.swing.border.Border;
 import javax.swing.border.TitledBorder;
@@ -25,7 +31,9 @@ public class VentanaSalaJuego extends JInternalFrame {
 	    
 		private PanelJugador dealer, yo, jugador2, jugador3;
 		private JTextArea areaMensajes;
-		private JButton pedir, plantar;
+		private JTextField valorApuesta;
+		
+		private JButton pedir, plantar, apostar;
 		private JPanel panelYo, panelBotones, yoFull, panelDealer,panelJugador2, panelJugador3;
 		
 		private String yoId, jugador2Id, jugador3Id;
@@ -52,7 +60,9 @@ public class VentanaSalaJuego extends JInternalFrame {
 		private void initGUI() {
 			// TODO Auto-generated method stub
 			//set up JFrame Container y Layout
-	        
+	        this.setBackground(Color.GREEN.darker() );
+			
+			
 			//Create Listeners objects
 			escucha = new Escucha();
 			//Create Control objects
@@ -73,6 +83,7 @@ public class VentanaSalaJuego extends JInternalFrame {
 			panelJugador3.add(jugador3);
 			add(panelJugador3,BorderLayout.SOUTH);	
 			
+			
 			areaMensajes = new JTextArea(8,18);
 			JScrollPane scroll = new JScrollPane(areaMensajes);	
 			Border blackline;
@@ -89,26 +100,59 @@ public class VentanaSalaJuego extends JInternalFrame {
 			scroll.setOpaque(false);
 			add(scroll,BorderLayout.CENTER);
 			
+			
+			
 			panelYo = new JPanel();
 			panelYo.setLayout(new BorderLayout());
 			yo = new PanelJugador(yoId);
 			panelYo.add(yo);
 				
+			panelBotones = new JPanel( new GridBagLayout() );
+			GridBagConstraints constraints = new GridBagConstraints();
+			
 			pedir = new JButton("Carta");
 			pedir.setEnabled(false);
 			pedir.addActionListener(escucha);
+			constraints.gridx=0;
+			constraints.gridy=0;
+			constraints.gridwidth=1;
+			constraints.gridheight=1;
+			panelBotones.add(pedir, constraints);
+			
 			plantar = new JButton("Plantar");
 			plantar.setEnabled(false);
 			plantar.addActionListener(escucha);
-			panelBotones = new JPanel();
-			panelBotones.add(pedir);
-			panelBotones.add(plantar);
+			constraints.gridx=1;
+			constraints.gridy=0;
+			constraints.gridwidth=1;
+			constraints.gridheight=1;
+			panelBotones.add(plantar, constraints);
+			
+			
+			valorApuesta = new JTextField("0" , 7);
+			constraints.gridx=0;
+			constraints.gridy=1;
+			constraints.gridwidth=1;
+			constraints.gridheight=1;
+			constraints.insets = new Insets(10, 0, 0, 5);
+			panelBotones.add(valorApuesta, constraints);
+			
+			apostar = new JButton("Apostar");
+			constraints.gridx=1;
+			constraints.gridy=1;
+			constraints.gridwidth=1;
+			constraints.gridheight=1;
+			constraints.insets = new Insets(10, 0, 0, 0);
+			panelBotones.add(apostar, constraints);
 			
 			yoFull = new JPanel();
-			yoFull.setPreferredSize(new Dimension(206,100));
+			yoFull.setLayout(new BoxLayout(yoFull, BoxLayout.Y_AXIS));
+			yoFull.setPreferredSize(new Dimension(206, 200 ));
 			yoFull.add(panelYo);
 			yoFull.add(panelBotones);
-			add(yoFull,BorderLayout.WEST);	
+			add(yoFull,BorderLayout.WEST);
+			
+			
 		}
 		
 		public void activarBotones(boolean turno) {
@@ -137,6 +181,7 @@ public class VentanaSalaJuego extends JInternalFrame {
 			areaMensajes.append(datosRecibidos.getMensaje()+"\n");
 		}
 		
+		
 		public void pintarTurno(DatosBlackJack datosRecibidos) {
 			areaMensajes.append(datosRecibidos.getMensaje()+"\n");	
 			ClienteBlackJack cliente = (ClienteBlackJack)this.getTopLevelAncestor();
@@ -145,11 +190,11 @@ public class VentanaSalaJuego extends JInternalFrame {
 				if(datosRecibidos.getJugadorEstado().equals("iniciar")) {
 					activarBotones(true);
 				}else {
-					if(datosRecibidos.getJugadorEstado().equals("plantó") ){
+					if(datosRecibidos.getJugadorEstado().equals("planto") ){
 						cliente.setTurno(false);
 					}else {
 						yo.pintarLaCarta(datosRecibidos.getCarta());
-						if(datosRecibidos.getJugadorEstado().equals("voló")) {
+						if(datosRecibidos.getJugadorEstado().equals("volo")) {
 							SwingUtilities.invokeLater(new Runnable() {
 								@Override
 								public void run() {
@@ -164,22 +209,22 @@ public class VentanaSalaJuego extends JInternalFrame {
 				if(datosRecibidos.getJugador().equals(jugador2Id)) {
 					//mensaje para PanelJuego jugador2
 					if(datosRecibidos.getJugadorEstado().equals("sigue")||
-					   datosRecibidos.getJugadorEstado().equals("voló")) {
+					   datosRecibidos.getJugadorEstado().equals("volo")) {
 						jugador2.pintarLaCarta(datosRecibidos.getCarta());
 					}
 				}
 				else if(datosRecibidos.getJugador().equals(jugador3Id)) {
 					//mensaje para PanelJuego jugador3
 					if(datosRecibidos.getJugadorEstado().equals("sigue")||
-						datosRecibidos.getJugadorEstado().equals("voló")) {
+						datosRecibidos.getJugadorEstado().equals("volo")) {
 						jugador3.pintarLaCarta(datosRecibidos.getCarta());
 						}
 					}
 				else {
 						//mensaje para PanelJuego dealer
 						if(datosRecibidos.getJugadorEstado().equals("sigue") ||
-						   datosRecibidos.getJugadorEstado().equals("voló")	||
-						   datosRecibidos.getJugadorEstado().equals("plantó")) {
+						   datosRecibidos.getJugadorEstado().equals("volo")	||
+						   datosRecibidos.getJugadorEstado().equals("planto")) {
 							dealer.pintarLaCarta(datosRecibidos.getCarta());
 						}
 					}
@@ -192,6 +237,26 @@ public class VentanaSalaJuego extends JInternalFrame {
 		  cliente.enviarMensajeServidor(mensaje);
 		}
 		   
+	   
+	   private boolean esNumerico(String texto) {
+		   
+		   int intValue;
+		   boolean flag=false;
+		   
+		   if(texto == null || texto.equals("")) {
+		        System.out.println("String cannot be parsed, it is null or empty.");
+		        return false;
+		    }
+		    
+		    try {
+		        intValue = Integer.parseInt(texto);
+		        flag= true;
+		    } catch (NumberFormatException e) {
+		        System.out.println("Input String cannot be parsed to Integer.");
+		    }
+		   
+		   return flag; 
+	   }
 	  
 	   private class Escucha implements ActionListener{
 
@@ -201,10 +266,19 @@ public class VentanaSalaJuego extends JInternalFrame {
 			if(actionEvent.getSource()==pedir) {
 				//enviar pedir carta al servidor
 				enviarDatos("pedir");				
-			}else {
+			}
+			else if( actionEvent.getSource()== plantar ) {
 				//enviar plantar al servidor
 				enviarDatos("plantar");
 				activarBotones(false);
+			}
+			else {
+				String temp = valorApuesta.getText();
+				
+				if( esNumerico(temp) )
+					enviarDatos( temp );
+				else
+					JOptionPane.showMessageDialog(null, "LAS APUESTAS SOLO SON VALORES ENTEROS", "ERROR APUESTA", JOptionPane.ERROR_MESSAGE );
 			}
 		}
 	   }

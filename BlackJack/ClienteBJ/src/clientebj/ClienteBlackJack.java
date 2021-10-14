@@ -42,7 +42,7 @@ public class ClienteBlackJack extends JFrame implements Runnable{
 	public static final int WIDTH=770;
 	public static final int HEIGHT=560;
 	
-	//Constantes de conexión con el Servidor BlackJack
+	//Constantes de conexiï¿½n con el Servidor BlackJack
 	public static final int PUERTO=7377;
 	public static final String IP="127.0.0.1";
 	
@@ -51,7 +51,7 @@ public class ClienteBlackJack extends JFrame implements Runnable{
 	private boolean turno;
 	private DatosBlackJack datosRecibidos;
 	
-	//variables para manejar la conexión con el Servidor BlackJack
+	//variables para manejar la conexiï¿½n con el Servidor BlackJack
 	private Socket conexion;
 	private ObjectOutputStream out;
 	private ObjectInputStream in;
@@ -74,6 +74,7 @@ public class ClienteBlackJack extends JFrame implements Runnable{
 		this.setLocationRelativeTo(null);
 		this.setResizable(false);
 		this.setVisible(true);
+		//this.setBackground(Color.yellow);
 		this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 	}
 	
@@ -145,11 +146,11 @@ public class ClienteBlackJack extends JFrame implements Runnable{
 			e.printStackTrace();
 		}
 		mostrarMensajes("Jugador conectado al servidor");
-		mostrarMensajes("Jugador estableció Flujos E/S");
+		mostrarMensajes("Jugador estableciï¿½ Flujos E/S");
 		//mandar nombre jugador
 		mostrarMensajes("Jugador envio nombre "+idYo);
 		enviarMensajeServidor(idYo);
-		//procesar comunicación con el ServidorBlackJack
+		//procesar comunicaciï¿½n con el ServidorBlackJack
 		iniciarHilo();	
 	}
 	
@@ -202,6 +203,11 @@ public class ClienteBlackJack extends JFrame implements Runnable{
 				
 			}
 		
+	}
+	
+	
+	private void pintarCartasInicio() {
+		ventanaSalaJuego.pintarCartasInicio(datosRecibidos);
 	}
 
 	private void habilitarSalaJuego(DatosBlackJack datosRecibidos) {

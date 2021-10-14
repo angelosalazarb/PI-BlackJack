@@ -17,16 +17,18 @@ import comunes.Carta;
 
 public class PanelJugador extends JPanel {
 	//constantes de clase
-	private static final int ANCHO = 206;
-	private static final int ALTO = 89;
+	private static final int ANCHO = 226;
+	private static final int ALTO = 135; //89
 	
 	//variables para control del graficado
 	private ArrayList<Recuerdo> dibujoRecordar;
+	//private ArrayList<Carta> dibujoCartas;
 	private int x;
 	    
 	public PanelJugador(String nombreJugador) {
 		//this.setBackground(Color.GREEN);
 		dibujoRecordar = new ArrayList<Recuerdo>();
+		//dibujoCartas = new ArrayList<>();
 		this.setPreferredSize(new Dimension(ANCHO,ALTO));
 		TitledBorder bordes;
 		bordes = BorderFactory.createTitledBorder(nombreJugador);
@@ -55,7 +57,10 @@ public class PanelJugador extends JPanel {
 				
 		//pinta la mano inicial
 		for(int i=0;i<dibujoRecordar.size();i++) {
-			g.drawString(dibujoRecordar.get(i).getCartaRecordar(), dibujoRecordar.get(i).getxRecordar(),35);
+			//g.drawString(dibujoRecordar.get(i).getCartaRecordar().toString(), dibujoRecordar.get(i).getxRecordar(),35);
+			
+			g.drawImage(dibujoRecordar.get(i).getCartaRecordar().getImageCard().getImage(), dibujoRecordar.get(i).getxRecordar(), 30, null);
+			
 		}	
 	}
 	
@@ -68,8 +73,8 @@ public class PanelJugador extends JPanel {
 			this.xRecordar = xRecordar;
 		}
 
-		public String getCartaRecordar() {
-			return cartaRecordar.toString();
+		public Carta getCartaRecordar() {
+			return cartaRecordar;
 		}
 
 		public int getxRecordar() {
