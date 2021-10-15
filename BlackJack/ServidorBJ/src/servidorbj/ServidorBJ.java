@@ -19,8 +19,8 @@ import comunes.Baraja;
 import comunes.Carta;
 import comunes.DatosBlackJack;
 
-/* Clase encargada de realizar la gestión del juego, esto es, el manejo de turnos y estado del juego.
- * También gestiona al jugador Dealer. 
+/* Clase encargada de realizar la gestiï¿½n del juego, esto es, el manejo de turnos y estado del juego.
+ * Tambiï¿½n gestiona al jugador Dealer. 
  * El Dealer tiene una regla de funcionamiento definida:
  * Pide carta con 16 o menos y Planta con 17 o mas.
  */
@@ -51,6 +51,7 @@ public class ServidorBJ implements Runnable{
 	private ArrayList<Carta> manoJugador3;
 	private ArrayList<Carta> manoDealer;
 	private int[] valorManos;
+	private ArrayList<Integer> valorApuestas;
 	private DatosBlackJack datosEnviar;
 	
 	public ServidorBJ() {
@@ -60,12 +61,15 @@ public class ServidorBJ implements Runnable{
 		inicializareVariablesManejoHilos();
 		//crear el servidor
     	try {
+    		mostrarMensaje("----------------------------------------------");
     		mostrarMensaje("Iniciando el servidor...");
+    		mostrarMensaje("----------------------------------------------");
 			server = new ServerSocket(PUERTO,LONGITUD_COLA);			
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+    	
 	}
 	
     private void inicializareVariablesManejoHilos() {
@@ -74,7 +78,7 @@ public class ServidorBJ implements Runnable{
 		bloqueoJuego = new ReentrantLock();
 		esperarInicio = bloqueoJuego.newCondition();
 		esperarTurno = bloqueoJuego.newCondition();
-		finalizar = bloqueoJuego.newCondition(); //Puede servir para la dinámica y lógica del juego
+		finalizar = bloqueoJuego.newCondition(); //Puede servir para la dinï¿½mica y lï¿½gica del juego
 		jugadores = new Jugador[LONGITUD_COLA];	
 	}
 
@@ -84,10 +88,12 @@ public class ServidorBJ implements Runnable{
 		
 		idJugadores = new String[LONGITUD_COLA];
 		valorManos = new int[LONGITUD_COLA+1];
+		valorApuestas = new ArrayList<>();
 		
 		mazo = new Baraja();
 		Carta carta;
 		
+		manosJugadores = new ArrayList<ArrayList<Carta>>(LONGITUD_COLA + 1);
 		manoJugador1 = new ArrayList<Carta>();
 		manoJugador2 = new ArrayList<Carta>();
 		manoJugador3 = new ArrayList<Carta>();
@@ -111,7 +117,6 @@ public class ServidorBJ implements Runnable{
 		calcularValorMano(carta,3);
 		
 		//gestiona las tres manos en un solo objeto para facilitar el manejo del hilo
-		manosJugadores = new ArrayList<ArrayList<Carta>>(LONGITUD_COLA + 1);
 		manosJugadores.add(manoJugador1);
 		manosJugadores.add(manoJugador2);
 		manosJugadores.add(manoJugador3);
@@ -120,8 +125,22 @@ public class ServidorBJ implements Runnable{
 
 	private void calcularValorMano(Carta carta, int i) {
 		// TODO Auto-generated method stub
-    	
+		System.out.println(manosJugadores.size());
+		boolean flagAs = false;
+		
+		if(manosJugadores.size() > 0) {
+		for(int j=0; j < manosJugadores.get(i).size(); j++) {
+			
+			if(manosJugadores.get(i).get(j).toString() == "As") {
+				flagAs = true;
+				mostrarMensaje("Encontré un As");
+				}				
+			}
+		}
+		
+		
 			if(carta.getValor().equals("As")) {
+				
 				if(valorManos[i] + 11 > 21) {
 					valorManos[i]+= 1;
 				}
@@ -132,12 +151,25 @@ public class ServidorBJ implements Runnable{
 			}else {
 				if(carta.getValor().equals("J") || carta.getValor().equals("Q")
 						   || carta.getValor().equals("K")) {
-					valorManos[i]+=10;
+
+					if(flagAs == true && valorManos[i] > 21) {
+						valorManos[i] = valorManos[i] ;
+					}
+					else {
+						valorManos[i]+=10;
+					}
 				}else {
-					valorManos[i]+=Integer.parseInt(carta.getValor()); 
+					if(flagAs == true && valorManos[i] > 21) {
+						valorManos[i] -= 10;
+						valorManos[i]+=Integer.parseInt(carta.getValor());
+					}
+					else {
+						valorManos[i]+=Integer.parseInt(carta.getValor());
+					}
 				}
 		}
 	}
+	
 	
 	public void iniciar() {
        	//esperar a los clientes
@@ -159,9 +191,46 @@ public class ServidorBJ implements Runnable{
 		System.out.println(mensaje);
 	}
 	
+	
+private void terminarJuego() {
+		
+		System.out.println("Entre a terminarjuego");
+		
+		String ultimoMensaje = datosEnviar.getMensaje();
+		
+		for(int i=0; i < LONGITUD_COLA; i++) {	    		
+				boolean dealerFuera = datosEnviar.getJugadorEstado() == "voló";
+				boolean jugadorFuera = valorManos[i]>21;
+				boolean jugadorGano =  datosEnviar.getJugadorEstado() != "voló" && valorManos[i] > valorManos[3];
+				boolean jugadorPerdio =  datosEnviar.getJugadorEstado() != "voló" && valorManos[i] < valorManos[3];
+				boolean empate =  datosEnviar.getJugadorEstado() != "voló" && valorManos[i] == valorManos[3];
+				
+				if(jugadorFuera || jugadorPerdio) {
+					System.out.println("Jugador perdió");
+					datosEnviar.setMensaje(ultimoMensaje + "\n" + idJugadores[i] + " perdiste, sales del juego!");
+					jugadores[i].enviarMensajeCliente(datosEnviar);
+				}
+				else if(dealerFuera && valorManos[i]<=21 || jugadorGano) {
+					System.out.println("Jugador ganó");
+					datosEnviar.setMensaje(ultimoMensaje + "\n" + idJugadores[i] + " ganaste, recoge tus ganancias!");
+					jugadores[i].enviarMensajeCliente(datosEnviar);
+				}
+				else if(empate){
+					System.out.println("Jugador empate");
+					datosEnviar.setMensaje(ultimoMensaje + "\n" + idJugadores[i] + " empate, no recibes ganancias!");
+					jugadores[i].enviarMensajeCliente(datosEnviar);
+				}
+				
+			} 
+		}
+
+	private void determinarGananciasApuestas() {
+		
+	}
+  	   
 	private void iniciarRondaJuego() {
 		
-		this.mostrarMensaje("bloqueando al servidor para despertar al jugador 1");
+		//this.mostrarMensaje("bloqueando al servidor para despertar al jugador 1");
     	bloqueoJuego.lock();
     	
     	//despertar al jugador 1 porque es su turno
@@ -173,19 +242,19 @@ public class ServidorBJ implements Runnable{
     	}catch(Exception e) {
     		
     	}finally {
-    		this.mostrarMensaje("Desbloqueando al servidor luego de despertar al jugador 1 para que inicie el juego");
+    		//this.mostrarMensaje("Desbloqueando al servidor luego de despertar al jugador 1 para que inicie el juego");
     		bloqueoJuego.unlock();
     	}			
 	}
 	
     private boolean seTerminoRonda() {
-    	//Determinar aquí si el dealer paga o recoge ganancias
+    	//Determinar aquï¿½ si el dealer paga o recoge ganancias
        return false;	
     }
     
     private void analizarMensaje(String entrada, int indexJugador) {
 		// TODO Auto-generated method stub
-        //garantizar que solo se analice la petición del jugador en turno.
+        //garantizar que solo se analice la peticion del jugador en turno.
     	while(indexJugador!=jugadorEnTurno) {
     		bloqueoJuego.lock();
     		try {
@@ -201,7 +270,7 @@ public class ServidorBJ implements Runnable{
         	
     	if(entrada.equals("pedir")) {
     		//dar carta 
-    		mostrarMensaje("Se envió carta al jugador "+idJugadores[indexJugador]);
+    		mostrarMensaje("Se envio carta al jugador "+idJugadores[indexJugador]);
     		Carta carta = mazo.getCarta();
     		//adicionar la carta a la mano del jugador en turno
     		manosJugadores.get(indexJugador).add(carta);
@@ -212,12 +281,12 @@ public class ServidorBJ implements Runnable{
 			datosEnviar.setValorManos(valorManos);
 			datosEnviar.setCarta(carta);
 			datosEnviar.setJugador(idJugadores[indexJugador]);
-    		//determinar qué sucede con la carta dada en la mano del jugador y 
+    		//determinar quï¿½ sucede con la carta dada en la mano del jugador y 
 			//mandar mensaje a todos los jugadores
     		if(valorManos[indexJugador]>21) {
-    			//jugador Voló
+    			//jugador Volo
 	    		datosEnviar.setMensaje(idJugadores[indexJugador]+" tienes "+valorManos[indexJugador]+" estas fuera! :(");	
-	    		datosEnviar.setJugadorEstado("voló");
+	    		datosEnviar.setJugadorEstado("volo");
 	    		
 	    		jugadores[0].enviarMensajeCliente(datosEnviar);
 	    		jugadores[1].enviarMensajeCliente(datosEnviar);
@@ -258,7 +327,7 @@ public class ServidorBJ implements Runnable{
 					datosEnviar.setValorManos(valorManos);
 					datosEnviar.setJugador("dealer");
 					datosEnviar.setJugadorEstado("iniciar");
-					datosEnviar.setMensaje("El Dealer se repartirá carta.");
+					datosEnviar.setMensaje("El Dealer se repartirï¿½ carta.");
 					
 					jugadores[0].enviarMensajeCliente(datosEnviar);
 					jugadores[1].enviarMensajeCliente(datosEnviar);
@@ -277,14 +346,16 @@ public class ServidorBJ implements Runnable{
 				jugadores[2].enviarMensajeCliente(datosEnviar);
 	    		
     		}
-    	}else {
-    		//jugador en turno plantó
+   
+    	}
+    	else if( entrada.equals("plantar") ) {
+    		//jugador en turno planto
     		datosEnviar = new DatosBlackJack();
     		datosEnviar.setIdJugadores(idJugadores);
 			datosEnviar.setValorManos(valorManos);
 			datosEnviar.setJugador(idJugadores[indexJugador]);
-    		datosEnviar.setMensaje(idJugadores[indexJugador]+" se plantó");
-    		datosEnviar.setJugadorEstado("plantó");
+    		datosEnviar.setMensaje(idJugadores[indexJugador]+" se planto");
+    		datosEnviar.setJugadorEstado("planto");
     		
     		jugadores[0].enviarMensajeCliente(datosEnviar);
 			jugadores[1].enviarMensajeCliente(datosEnviar);
@@ -325,7 +396,7 @@ public class ServidorBJ implements Runnable{
 				datosEnviar.setValorManos(valorManos);
 				datosEnviar.setJugador("Dealer");
 				datosEnviar.setJugadorEstado("iniciar");
-				datosEnviar.setMensaje("El Dealer se repartirá carta");
+				datosEnviar.setMensaje("El Dealer se repartirï¿½ carta");
 				
 				jugadores[0].enviarMensajeCliente(datosEnviar);
 				jugadores[1].enviarMensajeCliente(datosEnviar);
@@ -333,7 +404,17 @@ public class ServidorBJ implements Runnable{
 				
 				iniciarDealer();
         		}	
+    		
     		}
+    		else {
+    			//el jugador realizo su apuesta
+    			
+    			System.out.println("&&&&&&&&&&&&&&&&&&&&&&&&&&");
+    			
+    			
+    			
+    		}
+    	
     	}
 
     
@@ -343,12 +424,12 @@ public class ServidorBJ implements Runnable{
     	dealer.start();
     }
     
-    /*The Class Jugador. Clase interna que maneja el servidor para gestionar la comunicación
+    /*The Class Jugador. Clase interna que maneja el servidor para gestionar la comunicaciï¿½n
      * con cada cliente Jugador que se conecte
      */
     private class Jugador implements Runnable{
         
-    	//varibles para gestionar la comunicación con el cliente (Jugador) conectado
+    	//varibles para gestionar la comunicaciï¿½n con el cliente (Jugador) conectado
         private Socket conexionCliente;
     	private ObjectOutputStream out;
     	private ObjectInputStream in;
@@ -386,10 +467,12 @@ public class ServidorBJ implements Runnable{
 			if(indexJugador==0) {
 				//es jugador 1, debe ponerse en espera a la llegada del otro jugador
 				
-				try { // Excepción por el flujo de salida
+				try { // Excepciï¿½n por el flujo de salida
 					//guarda el nombre del primer jugador
 					idJugadores[0] = (String)in.readObject();
+		    		mostrarMensaje("----------------------------------------------");
 					mostrarMensaje("Hilo establecido con jugador (1) "+idJugadores[0]);
+		    		mostrarMensaje("----------------------------------------------");
 				} catch (ClassNotFoundException e1) {
 					// TODO Auto-generated catch block
 					e1.printStackTrace();
@@ -397,25 +480,25 @@ public class ServidorBJ implements Runnable{
 					// TODO Auto-generated catch block
 					e1.printStackTrace();
 				}
-				mostrarMensaje("bloquea servidor para poner en espera de inicio al jugador 1");
+				//mostrarMensaje("bloquea servidor para poner en espera de inicio al jugador 1");
 				bloqueoJuego.lock(); //bloquea el servidor
 				
 				while(suspendido) {
-					mostrarMensaje("Parando al Jugador 1 en espera del otro jugador...");
+					//mostrarMensaje("Parando al Jugador 1 en espera del otro jugador...");
 					try {
 						esperarInicio.await();
 					} catch (InterruptedException e) {
 						// TODO Auto-generated catch block
 						e.printStackTrace();
 					}finally {
-						mostrarMensaje("Desbloquea Servidor luego de bloquear al jugador 1");
+						//mostrarMensaje("Desbloquea Servidor luego de bloquear al jugador 1");
 						jugadores[1].setSuspendido(false);
 						esperarInicio.signal();
 						bloqueoJuego.unlock();
 					}
 				}
 				
-				//ya se conectó el otro jugador, 
+				//ya se conectï¿½ el otro jugador, 
 				//le manda al jugador 1 todos los datos para montar la sala de Juego
 				//le toca el turno a jugador 1
 				
@@ -438,7 +521,9 @@ public class ServidorBJ implements Runnable{
 				try {
 					//guarda el nombre del segundo jugador
 					idJugadores[1] = (String)in.readObject();
+		    		mostrarMensaje("----------------------------------------------");
 					mostrarMensaje("Hilo establecido con jugador (2) "+idJugadores[1]);
+		    		mostrarMensaje("----------------------------------------------");
 				} catch (ClassNotFoundException e1) {
 					// TODO Auto-generated catch block
 					e1.printStackTrace();
@@ -446,27 +531,27 @@ public class ServidorBJ implements Runnable{
 					// TODO Auto-generated catch block
 					e1.printStackTrace();
 				}
-				mostrarMensaje("bloquea servidor para poner en espera de inicio al jugador 2");
+				//mostrarMensaje("bloquea servidor para poner en espera de inicio al jugador 2");
 				bloqueoJuego.lock(); //bloquea el servidor
 				
 				while(suspendido) {
-					mostrarMensaje("Parando al Jugador 2 en espera del otro jugador...");
+					//mostrarMensaje("Parando al Jugador 2 en espera del otro jugador...");
 					try {
 						esperarInicio.await();
 					} catch (InterruptedException e) { 
 						// TODO Auto-generated catch block
 						e.printStackTrace();
 					}finally {
-						mostrarMensaje("Desbloquea Servidor luego de bloquear al jugador 2");
+						//mostrarMensaje("Desbloquea Servidor luego de bloquear al jugador 2");
 						bloqueoJuego.unlock();
 					}
 				}
 				
-				//ya se conectó el otro jugador, 
+				//ya se conectï¿½ el otro jugador, 
 				//le manda al jugador 1 todos los datos para montar la sala de Juego
 				//le toca el turno a jugador 2
 				
-				mostrarMensaje("manda al jugador 1 todos los datos para montar SalaJuego");
+				//mostrarMensaje("manda al jugador 1 todos los datos para montar SalaJuego");
 				datosEnviar = new DatosBlackJack();
 				datosEnviar.setManoDealer(manosJugadores.get(3));
 				datosEnviar.setManoJugador1(manosJugadores.get(0));
@@ -482,7 +567,9 @@ public class ServidorBJ implements Runnable{
 				   //jugador 3 debe esperar su turno
 				try {
 					idJugadores[2]=(String)in.readObject();
+					mostrarMensaje("----------------------------------------------");
 					mostrarMensaje("Hilo jugador (3)"+idJugadores[2]);
+					mostrarMensaje("----------------------------------------------");
 				} catch (ClassNotFoundException e1) {
 					// TODO Auto-generated catch block
 					e1.printStackTrace();
@@ -490,13 +577,13 @@ public class ServidorBJ implements Runnable{
 					// TODO Auto-generated catch block
 					e1.printStackTrace();
 				}
-				mostrarMensaje("manda al jugador 3 el nombre de los jugadores 2 y 1");
+				//mostrarMensaje("manda al jugador 3 el nombre de los jugadores 2 y 1");
 				
 				datosEnviar = new DatosBlackJack();
 				
-				System.out.println("Jugador 1 " + idJugadores[0] + ":"  + manosJugadores.get(0).toString());
-				System.out.println("Jugador 2 " + idJugadores[1] + ":"  + manosJugadores.get(1).toString());
-				System.out.println("Jugador 3 " + idJugadores[2] + ":"  + manosJugadores.get(2).toString());
+				mostrarMensaje("Jugador 1 " + idJugadores[0] + ":"  + manosJugadores.get(0).toString());
+				mostrarMensaje("Jugador 2 " + idJugadores[1] + ":"  + manosJugadores.get(1).toString());
+				mostrarMensaje("Jugador 3 " + idJugadores[2] + ":"  + manosJugadores.get(2).toString());
 				
 				datosEnviar.setManoDealer(manosJugadores.get(3));
 				datosEnviar.setManoJugador1(manosJugadores.get(0));
@@ -510,12 +597,12 @@ public class ServidorBJ implements Runnable{
 				enviarMensajeCliente(datosEnviar);
 				
 				iniciarRondaJuego(); //despertar al jugador 1 para iniciar el juego
-				mostrarMensaje("Bloquea al servidor para poner en espera de turno al jugador 3");
+				//mostrarMensaje("Bloquea al servidor para poner en espera de turno al jugador 3");
 				bloqueoJuego.lock();
 				try {
-					mostrarMensaje("Pone en espera de turno al jugador 3");
+					//mostrarMensaje("Pone en espera de turno al jugador 3");
 					esperarTurno.await();
-					mostrarMensaje("Despierta de la espera de inicio del juego al jugador 1 y 2 ");
+					//mostrarMensaje("Despierta de la espera de inicio del juego al jugador 1 y 2 ");
                     //
 				} catch (InterruptedException e) {
 					// TODO Auto-generated catch block
@@ -537,7 +624,7 @@ public class ServidorBJ implements Runnable{
 					//controlar cuando se cierra un cliente
 				}
 			}
-			//cerrar conexión
+			//cerrar conexiï¿½n
 		}
 		
 		public void enviarMensajeCliente(Object mensaje) {
@@ -551,11 +638,14 @@ public class ServidorBJ implements Runnable{
 		}			
     }//fin inner class Jugador      
 
+    
     //Jugador dealer emulado por el servidor
 	@Override
 	public void run() {
 		// TODO Auto-generated method stub
+		mostrarMensaje(">>>>>>>>>>>>>>>>>>>>>");
 		mostrarMensaje("Inicia el dealer ...");
+		mostrarMensaje(">>>>>>>>>>>>>>>>>>>>>");
         boolean pedir = true;
         
         while(pedir) {
@@ -577,25 +667,26 @@ public class ServidorBJ implements Runnable{
 				mostrarMensaje("El dealer sigue jugando");
 			}else {
 				if(valorManos[3]>21) {
-					datosEnviar.setJugadorEstado("voló");
+					datosEnviar.setJugadorEstado("volï¿½");
 					datosEnviar.setMensaje("Dealer ahora tiene: "+valorManos[3]+" . Esta fuera");
 					pedir=false;
-					mostrarMensaje("El dealer voló");
+					mostrarMensaje("El dealer volï¿½");
 				}else {
-					datosEnviar.setJugadorEstado("plantó");
-					datosEnviar.setMensaje("Dealer ahora tiene "+valorManos[3]+" plantó");
+					datosEnviar.setJugadorEstado("plantï¿½");
+					datosEnviar.setMensaje("Dealer ahora tiene "+valorManos[3]+" plantï¿½");
 					pedir=false;
-					mostrarMensaje("El dealer plantó");
+					mostrarMensaje("El dealer plantï¿½");
 				}
 			}
 			//envia la jugada a los otros jugadores
 			datosEnviar.setCarta(carta);
-			jugadores[0].enviarMensajeCliente(datosEnviar);
-			jugadores[1].enviarMensajeCliente(datosEnviar);
-			jugadores[2].enviarMensajeCliente(datosEnviar);
+			//jugadores[0].enviarMensajeCliente(datosEnviar);
+			//jugadores[1].enviarMensajeCliente(datosEnviar);
+			//jugadores[2].enviarMensajeCliente(datosEnviar);
 				
         }//fin while
         
+        terminarJuego();
 	}
     
 }//Fin class ServidorBJ
