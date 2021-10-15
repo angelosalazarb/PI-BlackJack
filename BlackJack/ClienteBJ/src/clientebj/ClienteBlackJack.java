@@ -144,10 +144,12 @@ public class ClienteBlackJack extends JFrame implements Runnable{
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+		mostrarMensajes("----------------------------------------------");
 		mostrarMensajes("Jugador conectado al servidor");
 		mostrarMensajes("Jugador estableció Flujos E/S");
 		//mandar nombre jugador
 		mostrarMensajes("Jugador envio nombre "+idYo);
+		mostrarMensajes("----------------------------------------------");
 		enviarMensajeServidor(idYo);
 		//procesar comunicación con el ServidorBlackJack
 		iniciarHilo();	
@@ -187,7 +189,9 @@ public class ClienteBlackJack extends JFrame implements Runnable{
 				try {
 					datosRecibidos = new DatosBlackJack();
 					datosRecibidos = (DatosBlackJack)in.readObject();
+					mostrarMensajes("----------------------------------------------");
 					mostrarMensajes("Cliente hilo run recibiendo mensaje servidor ");
+					mostrarMensajes("----------------------------------------------");
 					mostrarMensajes(datosRecibidos.getJugador()+" "+datosRecibidos.getJugadorEstado());
 	              
 					ventanaSalaJuego.pintarTurno(datosRecibidos);
