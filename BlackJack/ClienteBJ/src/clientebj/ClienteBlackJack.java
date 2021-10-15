@@ -112,7 +112,7 @@ public class ClienteBlackJack extends JFrame implements Runnable{
 		idYo=id;
 	}
 	
-	private void mostrarMensajes(String mensaje) {
+	public void mostrarMensajes(String mensaje) {
 		System.out.println(mensaje);
 	}
 	
@@ -147,12 +147,12 @@ public class ClienteBlackJack extends JFrame implements Runnable{
 		}
 		mostrarMensajes("----------------------------------------------");
 		mostrarMensajes("Jugador conectado al servidor");
-		mostrarMensajes("Jugador estableci� Flujos E/S");
+		mostrarMensajes("Jugador establecio Flujos E/S");
 		//mandar nombre jugador
 		mostrarMensajes("Jugador envio nombre "+idYo);
 		mostrarMensajes("----------------------------------------------");
 		enviarMensajeServidor(idYo);
-		//procesar comunicaci�n con el ServidorBlackJack
+		//procesar comunicacion con el ServidorBlackJack
 		iniciarHilo();	
 	}
 	
@@ -194,8 +194,18 @@ public class ClienteBlackJack extends JFrame implements Runnable{
 					mostrarMensajes("Cliente hilo run recibiendo mensaje servidor ");
 					mostrarMensajes("----------------------------------------------");
 					mostrarMensajes(datosRecibidos.getJugador()+" "+datosRecibidos.getJugadorEstado());
-	              
-					ventanaSalaJuego.pintarTurno(datosRecibidos);
+					
+					if( datosRecibidos.getJugadorEstado().equals("aposto") ) {
+						System.out.println("%%%%%%%%%%%%%%%%___________");
+						ventanaSalaJuego.appendTextoAreaMensajes(datosRecibidos);
+					}
+					else if( datosRecibidos.getJugadorEstado().equals("todos apostaron") ) {
+						ventanaSalaJuego.appendTextoAreaMensajes(datosRecibidos);
+						pintarCartasInicio();
+					}
+					else {
+						ventanaSalaJuego.pintarTurno(datosRecibidos);						
+					}
 					
 				} catch (ClassNotFoundException e) {
 					// TODO Auto-generated catch block
