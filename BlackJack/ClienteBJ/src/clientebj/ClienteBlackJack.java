@@ -48,7 +48,7 @@ public class ClienteBlackJack extends JFrame implements Runnable{
 	
 	//variables de control del juego
 	private String idYo, otroJugador, otroJugador2;
-	private boolean turno;
+	private boolean turno, apuestaRealizada;
 	private DatosBlackJack datosRecibidos;
 	
 	//variables para manejar la conexi�n con el Servidor BlackJack
@@ -88,6 +88,7 @@ public class ClienteBlackJack extends JFrame implements Runnable{
 		
 		//Create Control objects
 		turno=false;
+		apuestaRealizada=false;
 		//Set up JComponents
 	
 		this.setBackground(SystemColor.activeCaption);
@@ -197,11 +198,25 @@ public class ClienteBlackJack extends JFrame implements Runnable{
 					
 					if( datosRecibidos.getJugadorEstado().equals("aposto") ) {
 						System.out.println("%%%%%%%%%%%%%%%%___________");
+						ventanaSalaJuego.activarBotonApostar(false);			
 						ventanaSalaJuego.appendTextoAreaMensajes(datosRecibidos);
 					}
 					else if( datosRecibidos.getJugadorEstado().equals("todos apostaron") ) {
-						ventanaSalaJuego.appendTextoAreaMensajes(datosRecibidos);
-						pintarCartasInicio();
+						//ventanaSalaJuego.appendTextoAreaMensajes(datosRecibidos);						
+						ventanaSalaJuego.pintarCartasInicio(datosRecibidos);
+						
+						if(turno)
+							ventanaSalaJuego.activarBotones(true);
+					}
+					else if( datosRecibidos.getJugadorEstado().equals("iniciar siguiente ronda") ) {
+						
+						ventanaSalaJuego.limpiarGUI(true);		
+					}
+					else if( datosRecibidos.getJugadorEstado().equals("desactivar limpiar") ) {
+						System.out.println("ÑÑÑÑÑÑÑÑÑÑÑÑÑÑLLLL");
+						ventanaSalaJuego.limpiarGUI(false);
+						
+						enviarMensajeServidor("iniciar nueva ronda");
 					}
 					else {
 						ventanaSalaJuego.pintarTurno(datosRecibidos);						
@@ -220,7 +235,7 @@ public class ClienteBlackJack extends JFrame implements Runnable{
 	}
 	
 	
-	private void pintarCartasInicio() {
+	private void pintarCartasInicio(DatosBlackJack datosRecibidos) {
 		ventanaSalaJuego.pintarCartasInicio(datosRecibidos);
 	}
 
@@ -233,10 +248,13 @@ public class ClienteBlackJack extends JFrame implements Runnable{
 				ventanaEspera = (VentanaEspera)containerInternalFrames.getComponent(0);
 				ventanaEspera.cerrarSalaEspera();
 				ventanaSalaJuego = new VentanaSalaJuego(idYo,otroJugador,otroJugador2);
-				ventanaSalaJuego.pintarCartasInicio(datosRecibidos);
+				//ventanaSalaJuego.pintarCartasInicio(datosRecibidos);
 				adicionarInternalFrame(ventanaSalaJuego);
                 if(turno) {
-                	ventanaSalaJuego.activarBotones(turno);
+                	
+                	ventanaSalaJuego.activarBotonApostar(turno);
+                	
+                	//ventanaSalaJuego.activarBotones(turno);
                 }
 			}
 			
@@ -258,5 +276,13 @@ public class ClienteBlackJack extends JFrame implements Runnable{
   
 	public void setTurno(boolean turno) {
 		this.turno=turno;
-	}	
+	}
+	
+	public boolean getApuestaRealizada() {
+		return this.apuestaRealizada;
+	}
+	
+	public void setApuestaRealizada(boolean apuestaRealizada) {
+		this.apuestaRealizada = apuestaRealizada;
+	}
 }
