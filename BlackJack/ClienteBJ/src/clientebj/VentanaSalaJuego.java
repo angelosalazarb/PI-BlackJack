@@ -85,6 +85,7 @@ public class VentanaSalaJuego extends JInternalFrame {
 			add(panelDealer, BorderLayout.NORTH);		
 			
 			reiniciar = new JButton("Reiniciar");
+			reiniciar.addActionListener(escucha);
 			constraints2.gridx=1;
 			constraints2.gridy=0;
 			constraints2.gridwidth=1;
@@ -328,15 +329,23 @@ public class VentanaSalaJuego extends JInternalFrame {
 		@Override
 		public void actionPerformed(ActionEvent actionEvent) {
 			// TODO Auto-generated method stub
-			if(actionEvent.getSource()==pedir) {
+			if(actionEvent.getSource() == pedir) {
 				//enviar pedir carta al servidor
 				enviarDatos("pedir");				
 			}
-			else if( actionEvent.getSource()== plantar ) {
+			else if( actionEvent.getSource() == plantar ) {
 				//enviar plantar al servidor
 				enviarDatos("plantar");
 				activarBotones(false);
 			}
+			
+			else if( actionEvent.getSource() == reiniciar ) {
+				//enviar plantar al servidor
+				enviarDatos("reiniciar");
+				activarBotones(false);
+				dispose();
+			}
+			
 			else {
 				String temp = valorApuesta.getText();
 				
