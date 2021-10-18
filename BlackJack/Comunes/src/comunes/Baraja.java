@@ -80,6 +80,11 @@ public class Baraja {
 	   return carta;
    }
    
+   public void addCarta(Carta carta) {
+	   
+	   mazo.add(carta);	   
+   }
+   
    public int mazoSize() {
 	   return mazo.size();
    }
