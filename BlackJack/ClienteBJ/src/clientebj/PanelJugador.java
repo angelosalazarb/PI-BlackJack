@@ -24,6 +24,7 @@ public class PanelJugador extends JPanel {
 	private ArrayList<Recuerdo> dibujoRecordar;
 	//private ArrayList<Carta> dibujoCartas;
 	private int x;
+	private boolean limpiar;
 	    
 	public PanelJugador(String nombreJugador) {
 		//this.setBackground(Color.GREEN);
@@ -33,6 +34,7 @@ public class PanelJugador extends JPanel {
 		TitledBorder bordes;
 		bordes = BorderFactory.createTitledBorder(nombreJugador);
 		this.setBorder(bordes);
+		this.limpiar=false;
 	}
 	
 	public void pintarCartasInicio(ArrayList<Carta> manoJugador) {
@@ -54,16 +56,45 @@ public class PanelJugador extends JPanel {
 		super.paintComponent(g);
 		Font font =new Font(Font.DIALOG,Font.BOLD,12);
 		g.setFont(font);
-				
+		
+		if(limpiar==false) {
 		//pinta la mano inicial
-		for(int i=0;i<dibujoRecordar.size();i++) {
-			//g.drawString(dibujoRecordar.get(i).getCartaRecordar().toString(), dibujoRecordar.get(i).getxRecordar(),35);
-			
-			g.drawImage(dibujoRecordar.get(i).getCartaRecordar().getImageCard().getImage(), dibujoRecordar.get(i).getxRecordar(), 30, null);
-			
-		}	
+			for(int i=0;i<dibujoRecordar.size();i++) {
+				//g.drawString(dibujoRecordar.get(i).getCartaRecordar().toString(), dibujoRecordar.get(i).getxRecordar(),35);
+				
+				g.drawImage(dibujoRecordar.get(i).getCartaRecordar().getImageCard().getImage(), dibujoRecordar.get(i).getxRecordar(), 30, null);				
+			}
+		}
+		else {
+			g.setColor(this.getBackground());
+			g.fillRect(0, 0, ANCHO-2, ALTO-2);
+			System.out.println("limpiado panel");
+		}
 	}
 	
+	public void limpiarPanel(boolean bool) {
+		limpiar=bool;
+		dibujoRecordar.clear();
+		repaint();
+	}
+	
+	public int getXCardCoord() {
+		return x;
+	}
+
+	public void setXCardCoord(int x) {
+		this.x = x;
+	}
+	
+	public boolean getLimpiar() {
+		return limpiar;
+	}
+
+	public void setLimpiar(boolean limpiar) {
+		this.limpiar = limpiar;
+	}
+
+
 	private class Recuerdo{
 		private Carta cartaRecordar;
 		private int xRecordar;

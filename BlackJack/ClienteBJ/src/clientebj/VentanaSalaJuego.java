@@ -40,6 +40,7 @@ public class VentanaSalaJuego extends JInternalFrame {
 		//private DatosBlackJack datosRecibidos;
 		private Escucha escucha;
 		
+		
 		public VentanaSalaJuego(String yoId, String jugador2Id, String jugador3Id) {
 			this.yoId = yoId;
 			this.jugador2Id = jugador2Id;
@@ -180,7 +181,10 @@ public class VentanaSalaJuego extends JInternalFrame {
 		public void activarBotones(boolean turno) {
 			pedir.setEnabled(turno);
 			plantar.setEnabled(turno);
-			apostar.setEnabled(turno);
+		}
+		
+		public void activarBotonApostar(boolean bool) {
+			apostar.setEnabled(bool);
 		}
 		
 		public void pintarCartasInicio(DatosBlackJack datosRecibidos) {
@@ -210,6 +214,15 @@ public class VentanaSalaJuego extends JInternalFrame {
 		}
 		
 		
+		public void limpiarGUI(boolean bool) {
+			
+			dealer.limpiarPanel(bool);
+			yo.limpiarPanel(bool);
+			jugador2.limpiarPanel(bool);
+			jugador3.limpiarPanel(bool);
+		}
+		
+		
 		public void pintarTurno(DatosBlackJack datosRecibidos) {
 			areaMensajes.append(datosRecibidos.getMensaje()+"\n");	
 			ClienteBlackJack cliente = (ClienteBlackJack)this.getTopLevelAncestor();
@@ -217,12 +230,29 @@ public class VentanaSalaJuego extends JInternalFrame {
 			
 			if(datosRecibidos.getJugador().contentEquals(yoId) ){
 				if(datosRecibidos.getJugadorEstado().equals("iniciar")) {
-					activarBotones(true);
+					
+					System.out.println("hola soy juan");
+					System.out.println( cliente.getApuestaRealizada() );
+					if( cliente.getApuestaRealizada() == false ) {
+						cliente.setApuestaRealizada(true);
+						cliente.setTurno(false);
+						activarBotonApostar(true);
+					}
+					else
+						activarBotones(true);
 				}else {
 					if(datosRecibidos.getJugadorEstado().equals("planto") ){
 						cliente.setTurno(false);
 					}else {
-						yo.pintarLaCarta(datosRecibidos.getCarta());
+						/*
+						if(datosRecibidos.getJugador().equals("dealer")) {
+							System.out.println("$$$$$____///&&&&&&&");
+							yo.setXCardCoord( yo.getXCardCoord() + 27 );
+							yo.pintarLaCarta(datosRecibidos.getCarta());
+						}else {*/
+							yo.pintarLaCarta(datosRecibidos.getCarta());
+						//}
+						
 						if(datosRecibidos.getJugadorEstado().equals("volo")) {
 							SwingUtilities.invokeLater(new Runnable() {
 								@Override
@@ -254,8 +284,8 @@ public class VentanaSalaJuego extends JInternalFrame {
 						
 						//mensaje para PanelJuego dealer
 							if(datosRecibidos.getJugadorEstado().equals("sigue") ||
-							   datosRecibidos.getJugadorEstado().equals("volo")	||
-							   datosRecibidos.getJugadorEstado().equals("planto")) {
+							   datosRecibidos.getJugadorEstado().equals("volo")	 ||
+							   datosRecibidos.getJugadorEstado().equals("planto") ) {
 								dealer.pintarLaCarta(datosRecibidos.getCarta());
 							}
 						
@@ -317,7 +347,6 @@ public class VentanaSalaJuego extends JInternalFrame {
 			}
 			
 			else {
-				panelJugador2.setBackground(Color.orange);
 				String temp = valorApuesta.getText();
 				
 				System.out.println( "____ jugador "+ yoId +" aposto $ " + temp);
