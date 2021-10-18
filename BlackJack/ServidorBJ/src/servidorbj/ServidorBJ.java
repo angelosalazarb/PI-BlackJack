@@ -15,12 +15,16 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
+import javax.swing.JOptionPane;
+
+import clientebj.ClienteBlackJack;
+import clientebj.PrincipalClienteBJ;
 import comunes.Baraja;
 import comunes.Carta;
 import comunes.DatosBlackJack;
 
 /* Clase encargada de realizar la gesti�n del juego, esto es, el manejo de turnos y estado del juego.
- * Tambi�n gestiona al jugador Dealer. 
+ * Tambien gestiona al jugador Dealer. 
  * El Dealer tiene una regla de funcionamiento definida:
  * Pide carta con 16 o menos y Planta con 17 o mas.
  */
@@ -42,7 +46,7 @@ public class ServidorBJ implements Runnable{
 	
 	//variables de control del juego
 	private String[] idJugadores;
-	private int jugadorEnTurno;
+	private int jugadorEnTurno, jugadoresReiniciar;
 	//private boolean iniciarJuego;
 	private Baraja mazo;
 	private ArrayList<ArrayList<Carta>> manosJugadores;
@@ -78,7 +82,7 @@ public class ServidorBJ implements Runnable{
 		bloqueoJuego = new ReentrantLock();
 		esperarInicio = bloqueoJuego.newCondition();
 		esperarTurno = bloqueoJuego.newCondition();
-		finalizar = bloqueoJuego.newCondition(); //Puede servir para la din�mica y l�gica del juego
+		finalizar = bloqueoJuego.newCondition(); //Puede servir para la dinamica y logica del juego
 		jugadores = new Jugador[LONGITUD_COLA];	
 	}
 
@@ -89,6 +93,7 @@ public class ServidorBJ implements Runnable{
 		idJugadores = new String[LONGITUD_COLA];
 		valorManos = new int[LONGITUD_COLA+1];
 		valorApuestas = new ArrayList<>();
+		jugadoresReiniciar = 0;
 		
 		mazo = new Baraja();
 		Carta carta;
@@ -122,7 +127,14 @@ public class ServidorBJ implements Runnable{
 		manosJugadores.add(manoJugador3);
 		manosJugadores.add(manoDealer);
 	}
-
+	
+	/**
+	 * This method determine the value of the hands of the player in game
+	 * @param Carta carta
+	 * @param int i
+	 * @return void
+	 * calcularValorMano <Carta><int> ---> <void> 
+	 */
 	private void calcularValorMano(Carta carta, int i) {
 		// TODO Auto-generated method stub
 		System.out.println(manosJugadores.size());
@@ -141,9 +153,14 @@ public class ServidorBJ implements Runnable{
 		
 			if(carta.getValor().equals("As")) {
 				
-				if(valorManos[i] + 11 > 21) {
+				if(valorManos[i] + 11 >= 21) {
 					valorManos[i]+= 1;
 				}
+				
+				else if(valorManos[i] + 11 > 21 && flagAs == true) {
+					valorManos[i]-= 10;
+				}
+				
 				else {
 					valorManos[i]+=11;
 				}
@@ -170,7 +187,11 @@ public class ServidorBJ implements Runnable{
 		}
 	}
 	
-	
+	/**
+	 * This create the connection of the client with the server
+	 * @return void
+	 * calcularValorMano <> ---> <void> 
+	 */
 	public void iniciar() {
        	//esperar a los clientes
     	mostrarMensaje("Esperando a los jugadores...");
@@ -190,9 +211,26 @@ public class ServidorBJ implements Runnable{
 	private void mostrarMensaje(String mensaje) {
 		System.out.println(mensaje);
 	}
-	
-	
-private void terminarJuego() {
+
+	/**
+	 * This method determine when the game finish and if the player, win, loss or tie
+	 * @return void
+	 * terminarJuego <> ---> <void> 
+	 */
+	private void terminarJuego() {
+		
+		bloqueoJuego.lock();
+    	
+    	//despertar a los jugadores
+    	try {
+        	for(int i = 0;  i < LONGITUD_COLA; i++) {
+        		jugadores[i].setSuspendido(false);
+        	}
+    	}catch(Exception e) {
+    		
+    	}finally {
+    		bloqueoJuego.unlock();
+    	}
 		
 		System.out.println("Entre a terminarjuego");
 		
@@ -209,23 +247,54 @@ private void terminarJuego() {
 					System.out.println("Jugador perdio");
 					datosEnviar.setMensaje(ultimoMensaje + "\n" + idJugadores[i] + " perdiste, sales del juego!");
 					jugadores[i].enviarMensajeCliente(datosEnviar);
+
 				}
 				else if(dealerFuera && valorManos[i]<=21 || jugadorGano) {
 					System.out.println("Jugador gano");
 					datosEnviar.setMensaje(ultimoMensaje + "\n" + idJugadores[i] + " ganaste, recoge tus ganancias!");
 					jugadores[i].enviarMensajeCliente(datosEnviar);
+
 				}
 				else if(empate){
 					System.out.println("Jugador empate");
 					datosEnviar.setMensaje(ultimoMensaje + "\n" + idJugadores[i] + " empate, no recibes ganancias!");
 					jugadores[i].enviarMensajeCliente(datosEnviar);
+					
 				}
 				
 			} 
 		}
-
-	private void determinarGananciasApuestas() {
+	
+	/**
+	 * This method restart the game re-initializing the server
+	 * @return void
+	 * reiniciarJuego <> ---> <void> 
+	 */
+	private void reiniciarJuego() {
 		
+		if(jugadoresReiniciar == 1) {
+			
+			
+			manosJugadores.clear();
+			valorApuestas.clear();
+			
+			inicializarVariablesControlRonda();
+			inicializareVariablesManejoHilos();
+
+			for(int i = 0; i<LONGITUD_COLA; i++) {
+				PrincipalClienteBJ jugadorRe = new PrincipalClienteBJ();
+				jugadorRe.main(idJugadores);
+				
+			}
+			
+			iniciarRondaJuego();
+			iniciar();	
+
+		}
+		
+		else {
+			JOptionPane.showMessageDialog(null, "Los 3 jugadores deben querer reiniciar.", "Error reiniciar", JOptionPane.ERROR_MESSAGE );
+		}
 	}
   	   
 	private void iniciarRondaJuego() {
@@ -248,7 +317,7 @@ private void terminarJuego() {
 	}
 	
     private boolean seTerminoRonda() {
-    	//Determinar aqu� si el dealer paga o recoge ganancias
+    	//Determinar aqui si el dealer paga o recoge ganancias
        return false;	
     }
     
@@ -281,7 +350,7 @@ private void terminarJuego() {
 			datosEnviar.setValorManos(valorManos);
 			datosEnviar.setCarta(carta);
 			datosEnviar.setJugador(idJugadores[indexJugador]);
-    		//determinar qu� sucede con la carta dada en la mano del jugador y 
+    		//determinar quien sucede con la carta dada en la mano del jugador y 
 			//mandar mensaje a todos los jugadores
     		if(valorManos[indexJugador]>21) {
     			//jugador Volo
@@ -301,7 +370,7 @@ private void terminarJuego() {
 					datosEnviar.setValorManos(valorManos);
 					datosEnviar.setJugador(idJugadores[jugadorSiguiente]);
 					datosEnviar.setJugadorEstado("iniciar");
-					datosEnviar.setMensaje(idJugadores[jugadorSiguiente]+" te toca jugar y tienes: "+valorManos[jugadorSiguiente]);
+					datosEnviar.setMensaje(idJugadores[jugadorSiguiente] + " te toca jugar y tienes: " + valorManos[jugadorSiguiente]);
 					
 					jugadores[0].enviarMensajeCliente(datosEnviar);
 					jugadores[1].enviarMensajeCliente(datosEnviar);
@@ -327,7 +396,7 @@ private void terminarJuego() {
 					datosEnviar.setValorManos(valorManos);
 					datosEnviar.setJugador("dealer");
 					datosEnviar.setJugadorEstado("iniciar");
-					datosEnviar.setMensaje("El Dealer se repartir� carta.");
+					datosEnviar.setMensaje("El Dealer se repartira carta.");
 					
 					jugadores[0].enviarMensajeCliente(datosEnviar);
 					jugadores[1].enviarMensajeCliente(datosEnviar);
@@ -347,6 +416,27 @@ private void terminarJuego() {
 	    		
     		}
    
+    	}
+    	
+    	else if( entrada.equals("reiniciar") ) {
+    		
+    		jugadoresReiniciar = jugadoresReiniciar + 1;
+    		System.out.println("jugadores que quieren reiniciar " + jugadoresReiniciar);
+    		
+    		datosEnviar = new DatosBlackJack();
+    		datosEnviar.setIdJugadores(idJugadores);
+			datosEnviar.setValorManos(valorManos);
+			datosEnviar.setJugador(idJugadores[indexJugador]);
+    		datosEnviar.setMensaje(idJugadores[indexJugador]+" quiere jugar de nuevo.");
+    		datosEnviar.setJugadorEstado("reiniciar");
+    		
+    		jugadores[0].enviarMensajeCliente(datosEnviar);
+			jugadores[1].enviarMensajeCliente(datosEnviar);
+			jugadores[2].enviarMensajeCliente(datosEnviar);
+
+			reiniciarJuego();
+			
+			
     	}
     	else if( entrada.equals("plantar") ) {
     		//jugador en turno planto
@@ -396,7 +486,7 @@ private void terminarJuego() {
 				datosEnviar.setValorManos(valorManos);
 				datosEnviar.setJugador("Dealer");
 				datosEnviar.setJugadorEstado("iniciar");
-				datosEnviar.setMensaje("El Dealer se repartir� carta");
+				datosEnviar.setMensaje("El Dealer se repartira carta");
 				
 				jugadores[0].enviarMensajeCliente(datosEnviar);
 				jugadores[1].enviarMensajeCliente(datosEnviar);
@@ -429,7 +519,7 @@ private void terminarJuego() {
 					
 					datosEnviar.setJugador(idJugadores[indexJugador]);
 					datosEnviar.setJugadorEstado("todos apostaron");
-					datosEnviar.setMensaje( "Todos los jugadores apostaron, Iciando ronda" );
+					datosEnviar.setMensaje( "Todos los jugadores apostaron, Iniciando ronda" );
 				}
 				    			
     		}
@@ -448,7 +538,7 @@ private void terminarJuego() {
      */
     private class Jugador implements Runnable{
         
-    	//varibles para gestionar la comunicaci�n con el cliente (Jugador) conectado
+    	//varibles para gestionar la comunicacion con el cliente (Jugador) conectado
         private Socket conexionCliente;
     	private ObjectOutputStream out;
     	private ObjectInputStream in;
@@ -648,7 +738,7 @@ private void terminarJuego() {
 					//controlar cuando se cierra un cliente
 				}
 			}
-			//cerrar conexi�n
+			//cerrar conexion
 		}
 		
 		public void enviarMensajeCliente(Object mensaje) {
@@ -705,13 +795,12 @@ private void terminarJuego() {
 			}
 			//envia la jugada a los otros jugadores
 			datosEnviar.setCarta(carta);
-			//jugadores[0].enviarMensajeCliente(datosEnviar);
-			//jugadores[1].enviarMensajeCliente(datosEnviar);
-			//jugadores[2].enviarMensajeCliente(datosEnviar);
+			
 				
         }//fin while
         
         terminarJuego();
+        
 	}
     
 }//Fin class ServidorBJ

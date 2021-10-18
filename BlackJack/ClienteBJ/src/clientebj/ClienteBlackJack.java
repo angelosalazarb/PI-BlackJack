@@ -51,7 +51,7 @@ public class ClienteBlackJack extends JFrame implements Runnable{
 	private boolean turno;
 	private DatosBlackJack datosRecibidos;
 	
-	//variables para manejar la conexiï¿½n con el Servidor BlackJack
+	//variables para manejar la conexión con el Servidor BlackJack
 	private Socket conexion;
 	private ObjectOutputStream out;
 	private ObjectInputStream in;
