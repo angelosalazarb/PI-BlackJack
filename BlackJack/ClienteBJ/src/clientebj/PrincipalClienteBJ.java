@@ -17,7 +17,7 @@ public class PrincipalClienteBJ {
 			@Override
 			public void run() {
 				// TODO Auto-generated method stub
-				
+				System.out.println("###############hola entre a PrincipalBj");
 				ClienteBlackJack cliente = new ClienteBlackJack();
 			}		
 		});
